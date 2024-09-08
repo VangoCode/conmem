@@ -4,6 +4,7 @@ use std::{
 };
 
 mod server_mod {
+    use crate::utils as utils;
     use std::net::TcpListener;
 
     pub struct Server {
@@ -14,11 +15,7 @@ mod server_mod {
     impl Server {
         pub fn construct_server(port: String) -> Result<Self, ()> {
             // port number is only up to 16 bits
-            let is_integer = &port.parse::<i16>();
-            match is_integer {
-                Ok(ok) => println!("valid port number ({})", ok),
-                Err(err) => panic!("invalid port number ({})", err),
-            }
+            utils::validate_port(&port).unwrap();
 
             println!("building listener on port {:?}", port);
 

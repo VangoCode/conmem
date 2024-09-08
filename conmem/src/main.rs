@@ -1,5 +1,6 @@
 mod server;
 mod client;
+mod utils;
 
 
 fn main() {
