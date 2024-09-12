@@ -1,6 +1,7 @@
 use std::{
     io::{prelude::*, BufReader},
-    net::TcpStream,
+    net::{TcpStream, Shutdown},
+    thread,
 };
 
 mod server_mod {
@@ -50,7 +51,9 @@ pub fn server() -> Result<(), ()>{
     for stream in listener.incoming() {
         let stream = stream.unwrap();
 
-        handle_connection(stream);
+        thread::spawn(|| {
+            handle_connection(stream);
+        });
     }
 
 
@@ -61,12 +64,29 @@ pub fn server() -> Result<(), ()>{
 
 
 fn handle_connection(mut stream: TcpStream) {
-    let buf_reader = BufReader::new(&mut stream);
-    let http_request: Vec<_> = buf_reader
-        .lines()
-        .map(|result| result.unwrap())
-        .take_while(|line| !line.is_empty())
-        .collect();
+    let mut buf = [0;512];
+    loop {
+        let bytes_read = match stream.read(&mut buf) {
+            Ok(bytes_read) => bytes_read,
+            Err(_) => {stream.shutdown(Shutdown::Both).expect("Failed to shut down connection"); 0},
+        };
 
-    println!("Request: {:#?}", http_request);
+        
+
+        if bytes_read == 0 {break;}
+        let tmp = format!("{}", String::from_utf8_lossy(&buf).trim());
+        eprintln!("getting {}",tmp);
+        stream.write(&buf[..bytes_read]).unwrap();
+    }
+
+    println!("Closed connection");
+
+    // let buf_reader = BufReader::new(&mut stream);
+    // let http_request: Vec<_> = buf_reader
+    //     .lines()
+    //     .map(|result| result.unwrap())
+    //     .take_while(|line| !line.is_empty())
+    //     .collect();
+
+    // println!("Request: {:#?}", http_request);
 }
